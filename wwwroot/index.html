@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Vehicle Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+</head><body>
+<h1>Live vehicles</h1>
+<p id="status">Connecting...</p>
+<table border="1" cellpadding="4"><thead><tr><th>ID</th><th>Route</th><th>Lat</th><th>Lng</th><th>Speed</th><th>Updated</th></tr></thead><tbody id="body"></tbody></table>
+
+<script>
+const statusEl = document.getElementById("status");
+const rows = {};
+const conn = new signalR.HubConnectionBuilder()
+  .withUrl("/hub/vehicles").withAutomaticReconnect().build();
+
+conn.on("positionUpdate", v => {
+  console.log(v); 
+  let tr = rows[v.id];
+  if (!tr) { tr = document.createElement("tr"); rows[v.id] = tr; document.getElementById("body").appendChild(tr); }
+  tr.innerHTML = `<td>${v.id}</td><td>${v.route}</td><td>${v.lat.toFixed(4)}</td><td>${v.lng.toFixed(4)}</td><td>${v.speed}</td><td>${new  Date(v.timeStamp).toLocaleTimeString()}</td>`;
+});
+conn.onreconnecting(() => statusEl.textContent = "Reconnecting...");
+conn.onreconnected(() => statusEl.textContent = "Connected");
+conn.start().then(() => statusEl.textContent = "Connected").catch(e => statusEl.textContent = "Failed: " + e);
+</script>
+
+</body></html>
